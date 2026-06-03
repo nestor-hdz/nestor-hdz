@@ -10,6 +10,119 @@ Targeting top MFE programs (Princeton · CMU · Berkeley · Baruch) for 2027.
 
 ## Projects
 
+### KaxaNuk Research Challenge 2026 — Quantitative Trading Strategies
+
+> **Team leader · June 2026**
+
+Three systematic momentum strategies developed for the KaxaNuk Quantitative Finance Research Challenge, built on the `kaxanuk-backtest-engine` framework. Each strategy targets a distinct asset class — US equities, ETFs, and crypto — and is evaluated on risk-adjusted outperformance relative to a passive benchmark.
+
+#### Strategy Overview
+
+**1 · US Equities Momentum — Golden Cross**
+
+A trend-following strategy on the S&P 500 universe using a 50/200-day Simple Moving Average crossover. Enters long when SMA-50 crosses above SMA-200 (Golden Cross), exits on the inverse (Death Cross). Equally weighted across qualifying positions, rebalanced daily.
+
+| Metric | Value |
+|--------|-------|
+| Total Return | +208% |
+| CAGR | 19.96% |
+| Alpha vs. S&P 500 | 4.57% |
+| Signal | SMA 50 / 200 crossover |
+
+---
+
+**2 · ETF Momentum Rotation**
+
+A cross-sectional momentum strategy that ranks a diversified ETF universe by 12-1 momentum score (12-month return minus the most recent month, to avoid short-term reversal). Allocates capital to the top-ranked ETFs each month, rotating out of laggards. Benchmarked against a buy-and-hold ETF basket.
+
+| Metric | Value |
+|--------|-------|
+| Total Return | +175% |
+| CAGR | 21.71% |
+| Alpha vs. Benchmark | 6.92% |
+| Signal | 12-1 momentum score (monthly rotation) |
+
+---
+
+**3 · Crypto Momentum — EMA Crossover with Inverse-ATR Sizing**
+
+A momentum strategy on the top liquid crypto assets using an EMA-21 / EMA-63 crossover for entry/exit signals. Position sizes are scaled inversely to each asset's 14-day ATR, allocating more capital to lower-volatility assets for improved risk-adjusted returns. Benchmarked against a passive BTC hold.
+
+| Metric | Value |
+|--------|-------|
+| Total Return | +693% |
+| CAGR | 64.01% |
+| Alpha vs. BTC | 36.92% |
+| Signal | EMA 21 / 63 crossover + inverse-ATR sizing |
+
+---
+
+#### Backtest Results Summary
+
+| Strategy | Total Return | CAGR | Alpha | Benchmark |
+|---|---|---|---|---|
+| US Equities Momentum (SMA 50/200) | +208% | 19.96% | 4.57% | S&P 500 |
+| ETF Momentum Rotation (12-1) | +175% | 21.71% | 6.92% | ETF basket |
+| Crypto Momentum (EMA 21/63 + ATR) | +693% | 64.01% | 36.92% | BTC hold |
+
+---
+
+#### Tech Stack
+
+```
+Runtime        Python 3.13
+Backtesting    kaxanuk-backtest-engine
+Data           kaxanuk.data_curator
+Quant          QuantLib
+Data wrangling pandas
+```
+
+---
+
+#### How to Run
+
+**Prerequisites**
+
+```bash
+pip install kaxanuk-backtest-engine kaxanuk.data_curator QuantLib pandas
+```
+
+**US Equities Momentum**
+
+```bash
+python strategies/us_equities_momentum.py
+```
+
+Runs a daily SMA-50/200 crossover backtest on the configured S&P 500 universe. Results and equity curve are written to `output/us_equities/`.
+
+**ETF Momentum Rotation**
+
+```bash
+python strategies/etf_momentum_rotation.py
+```
+
+Runs a monthly 12-1 momentum ranking and rotation on the ETF universe. Results written to `output/etf_rotation/`.
+
+**Crypto Momentum**
+
+```bash
+python strategies/crypto_momentum.py
+```
+
+Runs a daily EMA-21/63 crossover with inverse-ATR position sizing on the crypto universe. Results written to `output/crypto_momentum/`.
+
+---
+
+#### Authors
+
+| Name | Role |
+|------|------|
+| Néstor Hernández Vázquez | Team leader · Strategy design · Implementation |
+
+`Python` `kaxanuk-backtest-engine` `kaxanuk.data_curator` `QuantLib` `pandas`
+
+---
+
 ### [Arrowport](https://github.com/nestor-hdz/arrowport) — AI-Powered Chrome Extension
 Chrome extension (Manifest V3) that uses Claude's API to extract 3–5 structured analytical insights from any selected web text. Features a persistent history vault ("La Bóveda"), floating activation button, and drag/resize modal. Published on the Chrome Web Store.
 `JavaScript` `Chrome Extensions API` `Anthropic Claude API`
@@ -72,7 +185,7 @@ Tools       Git · Docker · Vercel · Binance API · yfinance · pandas · NumP
 - **ESFM-IPN** — Licenciatura en Física y Matemáticas (2022–2027)
 - **MFAI26 Workshop — UNAM** (April 2026) — MIT, Stanford, Berkeley, CMU, EPFL researchers
 - **Research — Dr. Carlos Hernández Castellanos, IIMAS-UNAM** — Multi-Objective Reinforcement Learning
-- **Caxanuk Quantitative Finance Hackathon** (June 2026) — Team leader
+- **KaxaNuk Quantitative Finance Research Challenge** (June 2026) — Team leader
 
 ---
 
