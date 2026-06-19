@@ -52,6 +52,12 @@ Web app for tracking FIFA World Cup 2026 sticker albums. OCR scanner (Tesseract.
 
 ---
 
+### [Complex Dynamical Systems — Visual Study](https://github.com/nestor-hdz/presentacion-dinamicos) — Academic Visualization
+Matplotlib visualization project exploring the logistic map as a unifying framework across chaos theory, finance, biology, and cryptography. Generated ~12 scientific figures for a Beamer/LaTeX academic presentation — covering bifurcation diagrams, fat-tail distributions, VIX as chaos thermometer, neural networks as dynamical systems, and chaotic encryption.
+`Python` `NumPy` `matplotlib` `LaTeX`
+
+---
+
 ## Stack
 
 ```
