@@ -9,9 +9,12 @@ World Cup 2026 teams/players to historical (2018, 2022) profiles.
       star-player features, vectorized per team.
 - [x] **Task 1.5 — External signals**: FIFA ranking trajectory + opponent-
       strength-weighted pre-tournament form (see DECISIONS.md for why).
-- [ ] Task 2 — Similarity engine (cosine similarity, historical "twin" teams)
-- [ ] Task 3 — Predictive model (XGBoost, round-reached probabilities,
-      backtested 2018↔2022 before trusting it on 2026)
+- [x] **Task 2 (partial) — Similarity engine**: cosine similarity over a
+      standardized vector, backtested 2018↔2022. Beats both a FIFA-ranking
+      baseline and a trivial "everyone exits in groups" baseline (combined
+      MAE 0.66 vs 1.17 / 0.97 rounds) — see DECISIONS.md for the full
+      results, including the cases where it fails badly (Switzerland 2022).
+- [ ] Task 3 — Predictive model (XGBoost, round-reached probabilities)
 - [ ] Task 4 — Streamlit app + deploy
 
 See `DECISIONS.md` for the methodology safeguards agreed on (opponent-
@@ -47,7 +50,9 @@ worldcup/
     processed/             # generated CSVs (committed, small)
     raw/                   # StatsBomb cache (gitignored, ~66MB, regenerate via pipeline)
     external/              # FIFA ranking / international results (gitignored, auto-downloaded)
-  models/   # Task 3
+  models/
+    similarity_engine.py  # cosine similarity, standardized vector, leakage cols excluded
+    backtest.py            # 2018<->2022 validation vs FIFA-rank and trivial baselines
   app/      # Task 4
   scraping/ # FBref scraper for World Cup 2026 in-progress data (still pending)
 ```

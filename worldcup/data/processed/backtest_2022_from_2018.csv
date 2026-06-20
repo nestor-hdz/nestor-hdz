@@ -1,0 +1,33 @@
+team,actual_round,twin_2018,similarity_pct,predicted_round_model,twin_2018_baseline,predicted_round_baseline,predicted_round_trivial,error_model,error_baseline,error_trivial
+Argentina,5,Croatia,64.4698925349459,4,Germany,0,0,1,5,5
+Australia,1,Costa Rica,56.25899103523375,0,Brazil,2,0,1,1,1
+Belgium,0,Peru,45.53987100799867,0,Germany,0,0,0,0,0
+Brazil,2,Brazil,60.95596370550891,2,Germany,0,0,0,2,2
+Cameroon,0,Costa Rica,56.88531823673476,0,Brazil,2,0,0,2,0
+Canada,0,Poland,19.60400956983114,0,Brazil,2,0,0,2,0
+Costa Rica,0,Costa Rica,66.05932608833808,0,Germany,0,0,0,0,0
+Croatia,3,Croatia,34.21415041915982,4,Germany,0,0,1,3,3
+Denmark,0,Switzerland,21.15785224930232,1,Germany,0,0,1,0,0
+Ecuador,0,Uruguay,57.24234255757802,2,Brazil,2,0,2,2,0
+England,2,Brazil,61.959106725596754,2,Germany,0,0,0,2,2
+France,4,Croatia,32.62974781306829,4,Germany,0,0,0,4,4
+Germany,0,Spain,67.06958480800283,1,Germany,0,0,1,0,0
+Ghana,0,Costa Rica,73.62170110797757,0,Brazil,2,0,0,2,0
+Iran,0,Iran,51.23015537101679,0,Germany,0,0,0,0,0
+Japan,1,Denmark,36.99630564764677,1,Germany,0,0,0,1,1
+Mexico,0,Peru,56.63589656699671,0,Germany,0,0,0,0,0
+Morocco,3,Costa Rica,29.31772538896173,0,Germany,0,0,3,3,3
+Netherlands,2,Spain,19.86497242955464,1,Germany,0,0,1,2,2
+Poland,1,Costa Rica,43.20356925235567,0,Germany,0,0,1,1,1
+Portugal,2,Brazil,50.79807612898871,2,Germany,0,0,0,2,2
+Qatar,0,Costa Rica,40.55789351437611,0,Brazil,2,0,0,2,0
+Saudi Arabia,0,Iran,66.34404339668902,0,Brazil,2,0,0,2,0
+Senegal,1,Costa Rica,37.09875300271677,0,Germany,0,0,1,1,1
+Serbia,0,Denmark,21.70953317743581,1,Germany,0,0,1,0,0
+South Korea,1,Costa Rica,10.404837864626314,0,Germany,0,0,1,1,1
+Spain,1,Spain,52.833074771030944,1,Germany,0,0,0,1,1
+Switzerland,1,France,22.052035899814886,5,Germany,0,0,4,1,1
+Tunisia,0,Peru,43.94170687826813,0,Germany,0,0,0,0,0
+United States,1,Poland,29.786966190602342,0,Germany,0,0,1,1,1
+Uruguay,0,Peru,33.33442148841208,0,Germany,0,0,0,0,0
+Wales,0,Costa Rica,62.14608785786194,0,Germany,0,0,0,0,0

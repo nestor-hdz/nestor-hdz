@@ -1,0 +1,33 @@
+team,actual_round,twin_2018,similarity_pct,predicted_round_model,twin_2018_baseline,predicted_round_baseline,predicted_round_trivial,error_model,error_baseline,error_trivial
+Argentina,1,Spain,33.92893820333643,1,Ghana,0,0,0,1,1
+Australia,0,Mexico,25.98122353958158,0,Ghana,0,0,0,0,0
+Belgium,3,Argentina,63.18571476271355,5,Ghana,0,0,2,3,3
+Brazil,2,England,61.959106725596754,2,Saudi Arabia,0,0,0,2,2
+Colombia,1,Ghana,16.281963340016464,0,Ghana,0,0,1,1,1
+Costa Rica,0,Ghana,73.6217011079776,0,Ghana,0,0,0,0,0
+Croatia,4,Argentina,64.4698925349459,5,Ghana,0,0,1,4,4
+Denmark,1,Costa Rica,42.01876396703268,0,Ghana,0,0,1,1,1
+Egypt,0,Ghana,44.40495980564403,0,Ghana,0,0,0,0,0
+England,3,Germany,51.44369595008483,0,Ghana,0,0,3,3,3
+France,5,England,42.05241249323844,2,Ghana,0,0,3,5,5
+Germany,0,Germany,58.45774413638163,0,Japan,1,0,0,1,0
+Iceland,0,Saudi Arabia,45.91512530118926,0,Ghana,0,0,0,0,0
+Iran,0,Saudi Arabia,66.34404339668903,0,Ghana,0,0,0,0,0
+Japan,1,Saudi Arabia,40.55637563793207,0,Ghana,0,0,1,1,1
+Mexico,1,Ghana,25.0353074892965,0,Ghana,0,0,1,1,1
+Morocco,0,Saudi Arabia,34.80154171910406,0,Ghana,0,0,0,0,0
+Nigeria,0,Saudi Arabia,26.066027416900063,0,Ghana,0,0,0,0,0
+Panama,0,Ghana,67.24516291542636,0,Ghana,0,0,0,0,0
+Peru,0,Mexico,56.635896566996735,0,Ghana,0,0,0,0,0
+Poland,0,Tunisia,34.639185442594126,0,Ghana,0,0,0,0,0
+Portugal,1,Saudi Arabia,43.770535728313256,0,Ghana,0,0,1,1,1
+Russia,2,Saudi Arabia,24.301509950635463,0,Ghana,0,0,2,2,2
+Saudi Arabia,0,Ghana,12.804939550538041,0,Ghana,0,0,0,0,0
+Senegal,0,Tunisia,30.449238390138834,0,Ghana,0,0,0,0,0
+Serbia,0,Ecuador,5.313024582386048,0,Ghana,0,0,0,0,0
+South Korea,0,Saudi Arabia,62.00830749100905,0,Ghana,0,0,0,0,0
+Spain,1,Germany,67.06958480800284,0,Ghana,0,0,1,1,1
+Sweden,2,Iran,32.666835570100915,0,Ghana,0,0,2,2,2
+Switzerland,1,United States,25.36121062010393,1,Ghana,0,0,0,1,1
+Tunisia,0,Spain,8.561484836186759,1,Ghana,0,0,1,0,0
+Uruguay,2,Ecuador,57.24234255757802,0,Ghana,0,0,2,2,2
