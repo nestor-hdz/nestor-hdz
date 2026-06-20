@@ -7,6 +7,7 @@ import os
 
 import pandas as pd
 
+from data.external_signals import build_external_features
 from data.player_features import build_player_features
 from data.team_features import build_team_features
 
@@ -52,6 +53,12 @@ def build_team_vectors(years=(2018, 2022)) -> pd.DataFrame:
     )
 
     vectors = teams.merge(star_avg, on=["year", "team"], how="left")
+
+    pairs = list(vectors[["team", "year"]].itertuples(index=False, name=None))
+    external = build_external_features(pairs)
+    external.to_csv(f"{PROCESSED_DIR}/external_features.csv", index=False)
+    vectors = vectors.merge(external, on=["year", "team"], how="left")
+
     vectors.to_csv(f"{PROCESSED_DIR}/team_vectors.csv", index=False)
     return vectors
 

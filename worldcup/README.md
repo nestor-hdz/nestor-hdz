@@ -7,9 +7,16 @@ World Cup 2026 teams/players to historical (2018, 2022) profiles.
 
 - [x] **Task 1 — Data pipeline**: StatsBomb open-data (2018, 2022) team +
       star-player features, vectorized per team.
+- [x] **Task 1.5 — External signals**: FIFA ranking trajectory + opponent-
+      strength-weighted pre-tournament form (see DECISIONS.md for why).
 - [ ] Task 2 — Similarity engine (cosine similarity, historical "twin" teams)
-- [ ] Task 3 — Predictive model (XGBoost, round-reached probabilities)
+- [ ] Task 3 — Predictive model (XGBoost, round-reached probabilities,
+      backtested 2018↔2022 before trusting it on 2026)
 - [ ] Task 4 — Streamlit app + deploy
+
+See `DECISIONS.md` for the methodology safeguards agreed on (opponent-
+strength weighting, mandatory backtesting, expert-adjustment layer,
+uncertainty framing) after a prior pure-stats approach overstated confidence.
 
 ## Data confirmed available (StatsBomb open-data, no credentials needed)
 
@@ -35,12 +42,14 @@ worldcup/
     minutes.py            # minutes played from lineup position intervals
     team_features.py      # per-team per-tournament features + round_reached target
     player_features.py    # top-5-by-minutes player features per team
+    external_signals.py    # FIFA ranking + opponent-weighted pre-tournament form
     build_dataset.py       # orchestrates -> data/processed/team_vectors.csv
     processed/             # generated CSVs (committed, small)
     raw/                   # StatsBomb cache (gitignored, ~66MB, regenerate via pipeline)
+    external/              # FIFA ranking / international results (gitignored, auto-downloaded)
   models/   # Task 3
   app/      # Task 4
-  scraping/ # Task 1.5 — FBref scraper for World Cup 2026 in-progress data
+  scraping/ # FBref scraper for World Cup 2026 in-progress data (still pending)
 ```
 
 ## Team feature vector
@@ -59,6 +68,21 @@ then locations are flipped so every team always "attacks" toward x=120.
 PPDA = opponent's completed passes in their own defensive 60% of the pitch
 divided by the team's defensive actions (`Pressure`, `Duel`, `Interception`,
 `Foul Committed`) in that same zone. Lower = more aggressive high press.
+
+## External signals (Task 1.5)
+
+Two public, no-auth datasets, auto-downloaded on first run into
+`data/external/` (gitignored):
+
+- **FIFA ranking history** (Dato-Futbol/fifa-ranking, 1992–2024) →
+  `fifa_points_pre` (points right before the tournament started) and
+  `fifa_points_trend_12m` (rising or declining over the prior year).
+- **International results** (martj42/international_results, 1872–2026,
+  includes real WC 2026 group-stage scores already played) →
+  `weighted_form_score` / `weighted_goal_diff`: form over the last 15
+  matches before the tournament, each result weighted by the opponent's
+  FIFA points at match time — beating a top side counts more than beating
+  a minnow.
 
 ## Reproduce
 
