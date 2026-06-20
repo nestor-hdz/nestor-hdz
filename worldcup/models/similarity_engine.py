@@ -50,6 +50,7 @@ def most_similar(
                     "team": target_team,
                     "match_rank": rank,
                     "twin_team": source_df.iloc[j]["team"],
+                    "twin_year": source_df.iloc[j]["year"],
                     "similarity_pct": sims[i, j] * 100,
                     "twin_round_reached": source_df.iloc[j]["round_reached"],
                 }

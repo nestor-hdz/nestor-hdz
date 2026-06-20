@@ -19,6 +19,8 @@ match exactly. Its own leave-one-tournament-out MAE is reported alongside
 the full model's, and it is visibly worse - that gap IS the cost of missing
 in-tournament data for 2026, not a hidden one.
 """
+import math
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -79,6 +81,43 @@ def reduced_loto_eval(table: pd.DataFrame) -> float:
     return float(np.mean(maes))
 
 
+def reduced_loto_residuals(table: pd.DataFrame) -> np.ndarray:
+    """Same train/test split as reduced_loto_eval, but returns the raw
+    (actual - predicted) residuals instead of their mean absolute value, so
+    we can use their spread to size an honest per-round probability
+    distribution for 2026 (width = the model's own demonstrated error, not a
+    made-up number)."""
+    cols = REDUCED_COLS + ["twin_round_reached", "similarity_pct"]
+    residuals = []
+    for test_year in (2018, 2022):
+        train = table[table["year"] != test_year]
+        test = table[table["year"] == test_year]
+        model = XGBRegressor(**REDUCED_PARAMS)
+        model.fit(train[cols], train["round_reached"])
+        pred = model.predict(test[cols])
+        residuals.extend(test["round_reached"].to_numpy() - pred)
+    return np.array(residuals)
+
+
+def _normal_cdf(x: float, mean: float, std: float) -> float:
+    return 0.5 * (1 + math.erf((x - mean) / (std * math.sqrt(2))))
+
+
+def round_probabilities(predicted_round: float, std: float) -> dict[int, float]:
+    """Discretize a Normal(predicted_round, std) into probabilities for the
+    6 possible rounds (0..5), with the two edge rounds absorbing the tails.
+    `std` should come from the model's actual LOTO residuals, not a guess."""
+    probs = {}
+    for r in range(6):
+        lo = -np.inf if r == 0 else r - 0.5
+        hi = np.inf if r == 5 else r + 0.5
+        cdf_hi = 1.0 if hi == np.inf else _normal_cdf(hi, predicted_round, std)
+        cdf_lo = 0.0 if lo == -np.inf else _normal_cdf(lo, predicted_round, std)
+        probs[r] = cdf_hi - cdf_lo
+    total = sum(probs.values())
+    return {r: p / total for r, p in probs.items()}
+
+
 def build_2026_features() -> pd.DataFrame:
     pairs = [(team, 2026) for team in TEAMS_2026]
     ext = build_external_features(pairs)
@@ -97,11 +136,17 @@ def predict_2026(vectors: pd.DataFrame, reduced_table: pd.DataFrame) -> pd.DataF
     source = vectors  # all 64 historical teams as the twin-search pool
     twins = most_similar(features_2026, source, REDUCED_COLS, top_n=1)
     merged = features_2026.merge(
-        twins[["team", "twin_team", "similarity_pct", "twin_round_reached"]], on="team"
+        twins[["team", "twin_team", "twin_year", "similarity_pct", "twin_round_reached"]], on="team"
     )
 
     merged["predicted_round"] = model.predict(merged[cols])
     merged["predicted_round_rounded"] = np.clip(np.round(merged["predicted_round"]), 0, 5).astype(int)
+
+    std = reduced_loto_residuals(reduced_table).std(ddof=1)
+    round_probs = merged["predicted_round"].apply(lambda p: round_probabilities(p, std))
+    for r in range(6):
+        merged[f"prob_round_{r}"] = round_probs.apply(lambda d: d[r])
+    merged["prob_champion"] = merged["prob_round_5"]
     return merged
 
 
@@ -118,7 +163,7 @@ if __name__ == "__main__":
 
     preds = predict_2026(vectors, reduced_table)
     preds["predicted_round_label"] = preds["predicted_round_rounded"].map(ROUND_NAMES)
-    preds = preds.sort_values("predicted_round", ascending=False)
+    preds = preds.sort_values("prob_champion", ascending=False)
     preds.to_csv(f"{PROCESSED}/predictions_2026.csv", index=False)
 
     joblib.dump(
@@ -126,8 +171,8 @@ if __name__ == "__main__":
         f"{MODELS_DIR}/xgb_2026_reduced_model.joblib",
     )
 
-    cols_show = ["team", "twin_team", "similarity_pct", "fifa_points_pre", "weighted_form_score",
-                 "predicted_round", "predicted_round_label"]
+    cols_show = ["team", "twin_team", "twin_year", "similarity_pct", "fifa_points_pre",
+                 "weighted_form_score", "predicted_round", "predicted_round_label", "prob_champion"]
     print("\n=== Full 48-team ranking ===")
     print(preds[cols_show].to_string(index=False))
 
