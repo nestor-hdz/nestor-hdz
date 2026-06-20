@@ -14,7 +14,17 @@ World Cup 2026 teams/players to historical (2018, 2022) profiles.
       baseline and a trivial "everyone exits in groups" baseline (combined
       MAE 0.66 vs 1.17 / 0.97 rounds) — see DECISIONS.md for the full
       results, including the cases where it fails badly (Switzerland 2022).
-- [ ] Task 3 — Predictive model (XGBoost, round-reached probabilities)
+- [x] **Task 3 — Predictive model**: XGBoost on the full 2018+2022 vector
+      (leakage cols excluded) + historical-twin features, leave-one-
+      tournament-out MAE 0.653 (marginal improvement over the 0.656
+      similarity baseline — reported as essentially tied, not a win). A
+      second, reduced-feature model (`models/predict_2026.py`) predicts the
+      48 World Cup 2026 teams using only FIFA ranking + opponent-weighted
+      form (StatsBomb event data doesn't exist yet for 2026, and FBref/
+      Transfermarkt/ESPN are blocked by this environment's network
+      allowlist) — its LOTO MAE (1.002) is honestly worse, quantifying the
+      cost of missing in-tournament data. See DECISIONS.md for full results
+      and the 2026 predictions.
 - [ ] Task 4 — Streamlit app + deploy
 
 See `DECISIONS.md` for the methodology safeguards agreed on (opponent-

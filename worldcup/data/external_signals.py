@@ -50,10 +50,13 @@ RANKING_NAME_MAP = {
     "Iran": "IR Iran",
     "South Korea": "Korea Republic",
     "United States": "USA",
+    "Cape Verde": "Cape Verde Islands",
+    "DR Congo": "Congo DR",
+    "Ivory Coast": "Côte d'Ivoire",
 }
 RESULTS_NAME_MAP: dict[str, str] = {}
 
-TOURNAMENT_START = {2018: "2018-06-14", 2022: "2022-11-20"}
+TOURNAMENT_START = {2018: "2018-06-14", 2022: "2022-11-20", 2026: "2026-06-11"}
 FORM_WINDOW_MATCHES = 15
 
 

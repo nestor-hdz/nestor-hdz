@@ -91,3 +91,90 @@ Backtesting confirma señal real pero con outliers grandes (Suiza, Argentina).
 Antes de construir el modelo final de Tarea 3 para 2026, evaluar si conviene
 ya incorporar la capa de ajuste experto (salvaguarda #3) en paralelo, dado
 que el backtest mostró casos concretos donde el puro dato se equivoca feo.
+
+## Resultados Tarea 3 — Modelo XGBoost (round_reached)
+
+Validación: leave-one-tournament-out, igual protocolo que el backtesting
+(train 2018 → test 2022, train 2022 → test 2018), para comparar de forma
+justa contra el baseline de similitud ya establecido (0.656).
+
+Features: vector estandarizado (sin `matches_played`/`goals_for`/`goals_against`)
++ `twin_round_reached` y `similarity_pct` del gemelo histórico (calculados con
+el mismo `most_similar()` del motor de similitud) + `fifa_points_pre` /
+`fifa_points_trend_12m` / `weighted_form_score` / `weighted_goal_diff`.
+Hiperparámetros conservadores (`max_depth=1`, `n_estimators=30`,
+`reg_lambda=3.0`) por el tamaño de muestra extremadamente chico (32 filas de
+entrenamiento por fold, ~17 features candidatas) — un árbol más profundo
+sobreajusta de inmediato con tan pocos datos.
+
+| Modelo | MAE (rondas) |
+|---|---|
+| Baseline FIFA-ranking puro | 1.172 |
+| Baseline trivial ("todos a grupos") | 0.969 |
+| Motor de similitud (gemelo histórico) | 0.656 |
+| **XGBoost (vector completo 2018+2022)** | **0.653** |
+
+XGBoost mejora al motor de similitud por solo 0.003 rondas — es una mejora
+**marginal, no una victoria contundente**. Se reporta así explícitamente para
+no repetir el error de presentar el resultado como mejor de lo que es: con 64
+filas de entrenamiento el margen de error del MAE mismo es más ancho que esa
+diferencia, así que XGBoost y el motor de similitud son, en la práctica,
+estadísticamente equivalentes en esta muestra. La razón de mantener XGBoost
+de todos modos es que combina el gemelo histórico CON el ranking FIFA y la
+forma ponderada en un solo modelo, en vez de tratarlos por separado.
+
+Modelo final entrenado en las 64 filas (2018+2022) guardado en
+`models/xgb_round_model.joblib`. Reproducir con `python -m models.xgb_model`.
+
+## Predicciones 2026 — modelo de features reducidas (limitación de entorno)
+
+**Restricción técnica descubierta y confirmada**: FBref, Transfermarkt y ESPN
+(las fuentes planeadas para datos de partidos 2026 en curso) están bloqueadas
+por el allowlist de red del sandbox (`host_not_allowed` en cada intento
+directo). No hay manera de obtener para 2026 los datos a nivel de evento de
+StatsBomb (xG, posesión, PPDA, stats de jugadores estrella) — ese torneo
+simplemente no tiene datos StatsBomb porque no se ha jugado completo.
+
+**Decisión**: en vez de rellenar esas columnas con valores imputados o
+promedios (lo cual las dejaría dominar el modelo, o ser ignoradas, por
+razones falsas — un valor inventado no es señal), se entrenó un **modelo
+separado** (`models/predict_2026.py`) restringido exactamente a las columnas
+que sí existen para 2026: `fifa_points_pre`, `fifa_points_trend_12m`,
+`weighted_form_score`, `weighted_goal_diff` (esta última usando resultados
+reales de la fase de grupos 2026 ya jugada, vía `international_results.csv`)
+más el gemelo histórico calculado con ese mismo subconjunto de columnas. Así
+las features de entrenamiento y de predicción coinciden exactamente.
+
+| Modelo | MAE (rondas) |
+|---|---|
+| Motor de similitud (vector completo) | 0.656 |
+| XGBoost (vector completo) | 0.653 |
+| **XGBoost reducido (solo columnas disponibles para 2026)** | **1.002** |
+
+La brecha (1.002 vs 0.653) **es el costo real de no tener datos de evento
+2026** — no es un error de código, es la limitación honesta de la fuente de
+datos. Con `max_depth=1` y solo 4 features numéricas, el modelo reducido
+distingue poco entre equipos: casi todas las 48 selecciones quedaron
+agrupadas en la etiqueta "Octavos" tras redondear, lo cual es consistente con
+ese MAE más alto — el modelo reducido tiene mucha menos capacidad de
+discriminación que el completo.
+
+Equipos solicitados (ronda predicha, sin redondear, antes de la capa de
+ajuste experto pendiente — salvaguarda #3):
+
+| Equipo | Gemelo histórico | Similitud | Ronda predicha (cruda) |
+|---|---|---|---|
+| Argentina | Brasil 2018/2022 | 97.9% | 1.30 (~Octavos) |
+| Brasil | Estados Unidos | 95.8% | 1.30 (~Octavos) |
+| Francia | Dinamarca | 98.9% | 1.30 (~Octavos) |
+| España | Brasil | 98.7% | 1.30 (~Octavos) |
+| México | Irán | 95.9% | 0.68 (~Octavos) |
+
+**Esto NO debe leerse como certeza** (salvaguarda #4, pendiente de aplicarse
+formalmente en la Tarea 4/app): el modelo reducido tiene MAE ~1 ronda, así
+que una diferencia de 0.6 rondas entre México y Argentina aquí está dentro
+del margen de error del modelo, no es una distinción confiable. El ranking
+completo de 48 equipos está en `data/processed/predictions_2026.csv`.
+
+Modelo reducido guardado en `models/xgb_2026_reduced_model.joblib`.
+Reproducir con `python -m models.predict_2026`.
