@@ -14,18 +14,26 @@ World Cup 2026 teams/players to historical (2018, 2022) profiles.
       baseline and a trivial "everyone exits in groups" baseline (combined
       MAE 0.66 vs 1.17 / 0.97 rounds) — see DECISIONS.md for the full
       results, including the cases where it fails badly (Switzerland 2022).
-- [x] **Task 3 — Predictive model**: XGBoost on the full 2018+2022 vector
-      (leakage cols excluded) + historical-twin features, leave-one-
-      tournament-out MAE 0.653 (marginal improvement over the 0.656
-      similarity baseline — reported as essentially tied, not a win). A
-      second, reduced-feature model (`models/predict_2026.py`) predicts the
-      48 World Cup 2026 teams using only FIFA ranking + opponent-weighted
-      form (StatsBomb event data doesn't exist yet for 2026, and FBref/
-      Transfermarkt/ESPN are blocked by this environment's network
-      allowlist) — its LOTO MAE (1.002) is honestly worse, quantifying the
-      cost of missing in-tournament data. See DECISIONS.md for full results
-      and the 2026 predictions.
-- [ ] Task 4 — Streamlit app + deploy
+- [x] **Task 3 — Predictive model (validation only)**: XGBoost on the full
+      2018+2022 vector (leakage cols excluded) + historical-twin features,
+      leave-one-tournament-out MAE 0.653 (marginal improvement over the
+      0.656 similarity baseline — reported as essentially tied, not a win).
+      Used only to validate that the feature vector carries real signal —
+      **not** used to generate any 2026-facing output (see below).
+- [x] **Task 4 — Streamlit app + deploy**: `models/predict_2026.py` +
+      `app/app.py` are a pure **comparison** tool, not a predictor — no
+      predicted round, no championship probability, no round-by-round
+      probability anywhere for 2026 teams. For each of the 48 World Cup
+      2026 teams it finds the closest historical twin (2018 or 2022) using
+      FIFA ranking + opponent-weighted pre-tournament form (the only
+      signals available for 2026, since StatsBomb has no event data for
+      this tournament and FBref/Transfermarkt/ESPN are blocked by this
+      environment's network allowlist) and shows the round that twin
+      reached, as historical context — not a forecast. Each signal is
+      percentile-ranked within its own tournament year before comparing
+      across eras, fixing a bug where a 2018 FIFA ranking-formula change
+      made 2026 teams gravitate to 2022 twins by scale artifact rather than
+      real resemblance. See DECISIONS.md for the full writeup.
 
 See `DECISIONS.md` for the methodology safeguards agreed on (opponent-
 strength weighting, mandatory backtesting, expert-adjustment layer,

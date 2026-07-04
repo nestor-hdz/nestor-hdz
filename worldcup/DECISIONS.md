@@ -126,55 +126,60 @@ forma ponderada en un solo modelo, en vez de tratarlos por separado.
 Modelo final entrenado en las 64 filas (2018+2022) guardado en
 `models/xgb_round_model.joblib`. Reproducir con `python -m models.xgb_model`.
 
-## Predicciones 2026 — modelo de features reducidas (limitación de entorno)
+## Predicciones 2026 → reemplazadas por comparaciones puras (decisión explícita del usuario)
 
-**Restricción técnica descubierta y confirmada**: FBref, Transfermarkt y ESPN
-(las fuentes planeadas para datos de partidos 2026 en curso) están bloqueadas
-por el allowlist de red del sandbox (`host_not_allowed` en cada intento
-directo). No hay manera de obtener para 2026 los datos a nivel de evento de
-StatsBomb (xG, posesión, PPDA, stats de jugadores estrella) — ese torneo
-simplemente no tiene datos StatsBomb porque no se ha jugado completo.
+Primera versión de esta sección entrenaba un modelo XGBoost reducido para
+2026 y publicaba `predicted_round`, `prob_round_0..5` y `prob_champion` en la
+app. El usuario paró esto explícitamente:
 
-**Decisión**: en vez de rellenar esas columnas con valores imputados o
-promedios (lo cual las dejaría dominar el modelo, o ser ignoradas, por
-razones falsas — un valor inventado no es señal), se entrenó un **modelo
-separado** (`models/predict_2026.py`) restringido exactamente a las columnas
-que sí existen para 2026: `fifa_points_pre`, `fifa_points_trend_12m`,
-`weighted_form_score`, `weighted_goal_diff` (esta última usando resultados
-reales de la fase de grupos 2026 ya jugada, vía `international_results.csv`)
-más el gemelo histórico calculado con ese mismo subconjunto de columnas. Así
-las features de entrenamiento y de predicción coinciden exactamente.
+> "esto no es un modelo predictorio, esto no es un bot de apuestas, aquí no
+> voy a predecir quién va a ganar y quién va a perder el mundial... solo
+> quiero que vayas haciendo COMPARACIONES, solo eso"
 
-| Modelo | MAE (rondas) |
+Es la misma salvaguarda #3/#4 del inicio del proyecto aplicada en la
+práctica: una probabilidad de campeón, aunque esté honestamente calculada y
+con su margen de error explicado, se lee como certeza — exactamente el
+problema que originó este proyecto. **Se eliminó por completo** el modelo de
+regresión para 2026 (`XGBRegressor`, `predicted_round`, `prob_round_*`,
+`prob_champion`) y el artefacto `models/xgb_2026_reduced_model.joblib`.
+`models/predict_2026.py` ahora solo hace lo que dice Tarea 2: encontrar el
+gemelo histórico más parecido y mostrar el % de similitud — sin proyectar
+nada hacia el futuro del equipo 2026. El modelo XGBoost completo
+(`xgb_round_model.joblib`, MAE 0.653) se conserva solo como **validación de
+metodología** (demuestra que el vector de features tiene señal real vs. un
+baseline), no se usa para generar ningún output de cara al usuario sobre
+2026.
+
+### Transparencia de señales: qué se compara y con qué
+
+| Comparación | Columnas usadas |
 |---|---|
-| Motor de similitud (vector completo) | 0.656 |
-| XGBoost (vector completo) | 0.653 |
-| **XGBoost reducido (solo columnas disponibles para 2026)** | **1.002** |
+| 2018 ↔ 2022 (Tarea 2/3, datos completos) | `avg_possession_pct`, `avg_xg_for/against`, `avg_shots_on_target`, `avg_pass_completion_pct`, `avg_ppda`, `avg_high_pressures`, `star_goals_plus_assists`, `star_key_passes_per90`, `star_xg_plus_xa`, `star_duel_win_pct`, `fifa_points_pre`, `fifa_points_trend_12m`, `weighted_form_score`, `weighted_goal_diff` (17 columnas) |
+| 2026 vs. histórico (Tarea 2 reducida) | Solo `fifa_points_pre`, `fifa_points_trend_12m`, `weighted_form_score`, `weighted_goal_diff` (4 columnas) — StatsBomb no tiene datos de evento para 2026 (torneo no jugado completo) y FBref/Transfermarkt/ESPN están bloqueados por el allowlist de red del sandbox (`host_not_allowed`, confirmado por request directo) |
 
-La brecha (1.002 vs 0.653) **es el costo real de no tener datos de evento
-2026** — no es un error de código, es la limitación honesta de la fuente de
-datos. Con `max_depth=1` y solo 4 features numéricas, el modelo reducido
-distingue poco entre equipos: casi todas las 48 selecciones quedaron
-agrupadas en la etiqueta "Octavos" tras redondear, lo cual es consistente con
-ese MAE más alto — el modelo reducido tiene mucha menos capacidad de
-discriminación que el completo.
+Siempre excluidos de cualquier comparación (fuga de información): `matches_played`,
+`goals_for`, `goals_against`, `round_reached`. Método: similitud coseno sobre
+vector estandarizado (`sklearn.preprocessing.StandardScaler` + `cosine_similarity`).
 
-Equipos solicitados (ronda predicha, sin redondear, antes de la capa de
-ajuste experto pendiente — salvaguarda #3):
+### Bug encontrado y corregido: casi todos los gemelos salían de 2022
 
-| Equipo | Gemelo histórico | Similitud | Ronda predicha (cruda) |
-|---|---|---|---|
-| Argentina | Brasil 2018/2022 | 97.9% | 1.30 (~Octavos) |
-| Brasil | Estados Unidos | 95.8% | 1.30 (~Octavos) |
-| Francia | Dinamarca | 98.9% | 1.30 (~Octavos) |
-| España | Brasil | 98.7% | 1.30 (~Octavos) |
-| México | Irán | 95.9% | 0.68 (~Octavos) |
+Con las 4 columnas reducidas sin normalizar, 43 de 48 equipos 2026
+encontraban su gemelo en 2022 y solo 5 en 2018 — no por parecido futbolístico
+real, sino porque **FIFA cambió su fórmula de puntos en agosto 2018**: los
+puntos pre-torneo de 2018 promedian ~930, los de 2022 ~1599 (misma escala de
+fuerza real, números completamente distintos por el cambio de fórmula). Como
+2026 usa la fórmula nueva (misma escala que 2022), la comparación por valor
+crudo empujaba casi todo hacia gemelos de 2022 por artefacto de escala, no
+por señal.
 
-**Esto NO debe leerse como certeza** (salvaguarda #4, pendiente de aplicarse
-formalmente en la Tarea 4/app): el modelo reducido tiene MAE ~1 ronda, así
-que una diferencia de 0.6 rondas entre México y Argentina aquí está dentro
-del margen de error del modelo, no es una distinción confiable. El ranking
-completo de 48 equipos está en `data/processed/predictions_2026.csv`.
+**Fix**: cada señal se convierte a percentil dentro de su propio año
+(`groupby("year").rank(pct=True)`) antes de comparar entre eras — "este
+equipo estaba en el percentil 90 de su año" es comparable entre 2018, 2022 y
+2026; el valor crudo no lo es. Después del fix, la distribución de gemelos
+quedó 28 de 2018 / 20 de 2022 — mucho más equilibrada y consistente con que
+el parecido real no debería depender del año.
 
-Modelo reducido guardado en `models/xgb_2026_reduced_model.joblib`.
-Reproducir con `python -m models.predict_2026`.
+Reproducir con `python -m models.predict_2026`. Output:
+`data/processed/comparisons_2026.csv` (equipo, gemelo histórico + año, %
+similitud, ronda que alcanzó el gemelo — sin ronda predicha ni probabilidad
+para el equipo 2026).

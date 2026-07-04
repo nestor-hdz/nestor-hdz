@@ -1,10 +1,14 @@
-"""Task 4: Streamlit app — World Cup 2026 predictions.
+"""Task 4: Streamlit app — World Cup 2026 comparisons.
 
-Reads the already-computed predictions (models/predict_2026.py), it does not
-retrain anything. Two pages: a full 48-team ranking, and a per-team detail
-view with the round-probability distribution and an explicit uncertainty
-warning, per the methodology safeguards in DECISIONS.md (no output here
-should read as a certain forecast).
+This is a COMPARISON tool, not a predictor. It reads the output of
+models/predict_2026.py (comparisons_2026.csv): for each 2026 team, its
+closest historical twin (2018 or 2022) by FIFA ranking + pre-tournament
+form, and what that twin went on to do. There is no predicted round, no
+round-by-round probability, and no championship probability anywhere in
+this app - an earlier version of this project did present a similarity
+score as a confident forecast and that was the wrong call (see
+DECISIONS.md). Two pages: a 48-team comparison table, and a per-team detail
+view with a signal-by-signal comparison chart against the twin.
 """
 import os
 
@@ -15,100 +19,100 @@ import streamlit as st
 PROCESSED = os.path.join(os.path.dirname(__file__), "..", "data", "processed")
 
 ROUND_NAMES = {0: "Grupos", 1: "Octavos", 2: "Cuartos", 3: "Semis", 4: "Final", 5: "Campeón"}
-REDUCED_MODEL_MAE = 1.002  # leave-one-tournament-out MAE, see DECISIONS.md
+SIGNAL_LABELS = {
+    "fifa_points_pre": "Puntos FIFA pre-torneo",
+    "fifa_points_trend_12m": "Tendencia FIFA (12 meses)",
+    "weighted_form_score": "Forma ponderada por rival",
+    "weighted_goal_diff": "Diferencia de gol ponderada",
+}
 
 
 @st.cache_data
-def load_predictions() -> pd.DataFrame:
-    return pd.read_csv(f"{PROCESSED}/predictions_2026.csv")
+def load_comparisons() -> pd.DataFrame:
+    return pd.read_csv(f"{PROCESSED}/comparisons_2026.csv")
 
 
-def ranking_page(preds: pd.DataFrame):
-    st.header("Ranking general — 48 equipos, Mundial 2026")
+def ranking_page(comps: pd.DataFrame):
+    st.header("Comparación general — 48 equipos, Mundial 2026")
     st.caption(
-        "Ordenado por probabilidad de campeón. MAE del modelo: "
-        f"~{REDUCED_MODEL_MAE:.1f} rondas (ver advertencia en la página de detalle)."
+        "Cada equipo 2026 comparado con su gemelo histórico (2018 o 2022) más "
+        "parecido, por ranking FIFA y forma pre-torneo. Esto NO es una "
+        "predicción de qué tan lejos llegará cada equipo — es una analogía "
+        "estadística. Ordenado por % de similitud descendente."
     )
 
-    table = preds[[
-        "team", "predicted_round_label", "twin_team", "twin_year",
-        "similarity_pct", "prob_champion",
+    table = comps[[
+        "team", "twin_team", "twin_year", "similarity_pct", "twin_round_label",
     ]].rename(columns={
-        "team": "Equipo",
-        "predicted_round_label": "Ronda predicha",
+        "team": "Equipo 2026",
         "twin_team": "Gemelo histórico",
         "twin_year": "Año del gemelo",
         "similarity_pct": "% similitud",
-        "prob_champion": "Prob. campeón",
+        "twin_round_label": "Ronda a la que llegó el gemelo",
     })
     table["% similitud"] = table["% similitud"].round(1)
-    table["Prob. campeón"] = (table["Prob. campeón"] * 100).round(2)
-    table = table.sort_values("Prob. campeón", ascending=False).reset_index(drop=True)
+    table = table.sort_values("% similitud", ascending=False).reset_index(drop=True)
 
     st.dataframe(
         table,
         use_container_width=True,
-        column_config={
-            "% similitud": st.column_config.NumberColumn(format="%.1f%%"),
-            "Prob. campeón": st.column_config.NumberColumn(format="%.2f%%"),
-        },
+        column_config={"% similitud": st.column_config.NumberColumn(format="%.1f%%")},
         hide_index=True,
     )
 
 
-def detail_page(preds: pd.DataFrame):
+def detail_page(comps: pd.DataFrame):
     st.header("Detalle por equipo")
 
-    team = st.selectbox("Selecciona un equipo", sorted(preds["team"].unique()))
-    row = preds[preds["team"] == team].iloc[0]
+    team = st.selectbox("Selecciona un equipo", sorted(comps["team"].unique()))
+    row = comps[comps["team"] == team].iloc[0]
 
     st.markdown(
         f"### {team} 2026 se parece en **{row['similarity_pct']:.1f}%** "
         f"a **{row['twin_team']} {int(row['twin_year'])}**"
     )
     st.caption(
-        f"Ese gemelo histórico llegó a: {ROUND_NAMES[int(row['twin_round_reached'])]} "
-        f"({int(row['twin_round_reached'])})."
+        f"Ese gemelo histórico llegó a: {row['twin_round_label']}. "
+        "Esto es contexto histórico, no una proyección de que el equipo 2026 "
+        "vaya a llegar a la misma ronda."
     )
 
-    round_labels = [ROUND_NAMES[r] for r in range(6)]
-    probs = [row[f"prob_round_{r}"] * 100 for r in range(6)]
-
-    fig = go.Figure(go.Bar(x=round_labels, y=probs, marker_color="#1f77b4"))
+    signal_cols = list(SIGNAL_LABELS.keys())
+    fig = go.Figure()
+    fig.add_bar(name=f"{team} 2026", x=[SIGNAL_LABELS[c] for c in signal_cols],
+                y=[row[c] for c in signal_cols], marker_color="#1f77b4")
     fig.update_layout(
-        title=f"Probabilidad de llegar a cada ronda — {team}",
-        xaxis_title="Ronda",
-        yaxis_title="Probabilidad (%)",
-        yaxis_range=[0, 100],
+        title=f"Señales comparadas: {team} 2026 vs. {row['twin_team']} {int(row['twin_year'])}",
+        yaxis_title="Valor de la señal",
+        barmode="group",
     )
     st.plotly_chart(fig, use_container_width=True)
 
     st.warning(
-        "**Esto no es una certeza.** El modelo reducido usado para 2026 "
-        f"(ranking FIFA + forma pre-torneo ponderada) tiene un error histórico "
-        f"de ~{REDUCED_MODEL_MAE:.1f} ronda en validación leave-one-tournament-out "
-        "(2018↔2022) — más alto que el modelo completo (0.65), porque a 2026 le "
-        "faltan los datos de partido en curso (xG, posesión, etc. — StatsBomb no "
-        "los tiene todavía y FBref/Transfermarkt/ESPN no son accesibles desde "
-        "este entorno). Las probabilidades de arriba son una distribución "
-        "estimada centrada en la predicción del modelo, con un ancho calibrado "
-        "por ese mismo error histórico — no un pronóstico exacto. Diferencias "
-        "chicas entre equipos (menos de ~1 ronda) no son distinciones confiables. "
-        "Ver DECISIONS.md para la metodología completa y sus límites."
+        "**Esto es una comparación, no una predicción.** Solo se usan 4 "
+        "señales para 2026 (ranking FIFA y forma pre-torneo ponderada por "
+        "rival) porque StatsBomb no tiene datos de partido para este torneo "
+        "todavía y FBref/Transfermarkt/ESPN no son accesibles desde este "
+        "entorno — es una base mucho más angosta que la usada para comparar "
+        "2018 contra 2022 (que incluye posesión, xG, presión y estadísticas "
+        "de jugadores clave). El % de similitud describe qué tan parecido es "
+        "el equipo 2026 a su gemelo histórico en esas señales — no dice nada "
+        "sobre qué ronda alcanzará el equipo 2026. Ver DECISIONS.md para la "
+        "metodología completa y sus límites."
     )
 
 
 def main():
-    st.set_page_config(page_title="Mundial 2026 — Predicciones", layout="wide")
+    st.set_page_config(page_title="Mundial 2026 — Comparaciones", layout="wide")
     st.title("Mundial 2026: equipos vs. gemelos históricos")
 
-    preds = load_predictions()
+    comps = load_comparisons()
 
-    page = st.sidebar.radio("Página", ["Ranking general", "Detalle por equipo"])
-    if page == "Ranking general":
-        ranking_page(preds)
+    page = st.sidebar.radio("Página", ["Comparación general", "Detalle por equipo"])
+    if page == "Comparación general":
+        ranking_page(comps)
     else:
-        detail_page(preds)
+        detail_page(comps)
 
 
 if __name__ == "__main__":
